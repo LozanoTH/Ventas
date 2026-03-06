@@ -1,161 +1,14 @@
-<?php
-// ============================================
-// CONFIGURACIÓN DE LA BASE DE DATOS
-// ============================================
-$host = 'sql105.infinityfree.com';
-$dbname = 'if0_40979597_XXX';
-$username = 'if0_40979597';
-$password = 'fVbElCR27mwe';
-
-try {
-    $pdo = new PDO("mysql:host=$host;dbname=$dbname;charset=utf8", $username, $password);
-    $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-    
-    // Crear tablas si no existen
-    $pdo->exec("
-        CREATE TABLE IF NOT EXISTS users (
-            id INT AUTO_INCREMENT PRIMARY KEY,
-            username VARCHAR(50) UNIQUE NOT NULL,
-            password VARCHAR(255) NOT NULL,
-            role ENUM('admin', 'employee') NOT NULL,
-            full_name VARCHAR(100)
-        );
-        
-        CREATE TABLE IF NOT EXISTS products (
-            id INT AUTO_INCREMENT PRIMARY KEY,
-            name VARCHAR(255) NOT NULL,
-            description TEXT,
-            price DECIMAL(10,2) NOT NULL,
-            category VARCHAR(100),
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        );
-    ");
-    
-    // Insertar usuario admin por defecto si no existe
-    $checkAdmin = $pdo->query("SELECT * FROM users WHERE username = 'admin'");
-    if ($checkAdmin->rowCount() == 0) {
-        $hashedPassword = password_hash('admin123', PASSWORD_DEFAULT);
-        $pdo->prepare("INSERT INTO users (username, password, role, full_name) VALUES (?, ?, 'admin', 'Administrador')")
-            ->execute(['admin', $hashedPassword]);
-    }
-    
-    // Insertar usuario empleado por defecto si no existe
-    $checkEmployee = $pdo->query("SELECT * FROM users WHERE username = 'empleado'");
-    if ($checkEmployee->rowCount() == 0) {
-        $hashedPassword = password_hash('empleado123', PASSWORD_DEFAULT);
-        $pdo->prepare("INSERT INTO users (username, password, role, full_name) VALUES (?, ?, 'employee', 'Empleado')")
-            ->execute(['empleado', $hashedPassword]);
-    }
-    
-    // Insertar productos de ejemplo si no hay ninguno
-    $checkProducts = $pdo->query("SELECT COUNT(*) FROM products");
-    if ($checkProducts->fetchColumn() == 0) {
-        $sampleProducts = [
-            ['Laptop HP Pavilion', '15.6\", Intel Core i5, 8GB RAM, 512GB SSD', 899.99, 'Electrónica'],
-            ['Mouse Inalámbrico', 'Conexión USB, 1600 DPI, Negro', 25.99, 'Electrónica'],
-            ['Camisa Polo', 'Algodón, Manga Corta, Azul', 29.99, 'Ropa'],
-            ['Pantalón Jeans', 'Talla 32, Azul Claro', 49.99, 'Ropa'],
-            ['Smart TV 50"', '4K Ultra HD, Smart TV, HDR', 599.99, 'Electrónica']
-        ];
-        
-        $stmt = $pdo->prepare("INSERT INTO products (name, description, price, category) VALUES (?, ?, ?, ?)");
-        foreach ($sampleProducts as $product) {
-            $stmt->execute($product);
-        }
-    }
-    
-} catch(PDOException $e) {
-    die("Error de conexión: " . $e->getMessage());
-}
-
-// ============================================
-// API ENDPOINTS
-// ============================================
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $input = json_decode(file_get_contents('php://input'), true);
-    $action = $input['action'] ?? '';
-    
-    switch($action) {
-        case 'login':
-            $username = $input['username'] ?? '';
-            $password = $input['password'] ?? '';
-            
-            $stmt = $pdo->prepare("SELECT * FROM users WHERE username = ?");
-            $stmt->execute([$username]);
-            $user = $stmt->fetch(PDO::FETCH_ASSOC);
-            
-            if ($user && password_verify($password, $user['password'])) {
-                echo json_encode([
-                    'success' => true,
-                    'user' => [
-                        'username' => $user['username'],
-                        'role' => $user['role'],
-                        'name' => $user['full_name']
-                    ]
-                ]);
-            } else {
-                echo json_encode(['success' => false, 'message' => 'Credenciales incorrectas']);
-            }
-            exit;
-            
-        case 'getProducts':
-            $stmt = $pdo->query("SELECT * FROM products ORDER BY category, name");
-            $products = $stmt->fetchAll(PDO::FETCH_ASSOC);
-            echo json_encode(['success' => true, 'products' => $products]);
-            exit;
-            
-        case 'addProduct':
-            $name = $input['name'] ?? '';
-            $description = $input['description'] ?? '';
-            $price = $input['price'] ?? 0;
-            $category = $input['category'] ?? '';
-            
-            $stmt = $pdo->prepare("INSERT INTO products (name, description, price, category) VALUES (?, ?, ?, ?)");
-            $stmt->execute([$name, $description, $price, $category]);
-            echo json_encode(['success' => true, 'id' => $pdo->lastInsertId()]);
-            exit;
-            
-        case 'updateProduct':
-            $id = $input['id'] ?? 0;
-            $name = $input['name'] ?? '';
-            $description = $input['description'] ?? '';
-            $price = $input['price'] ?? 0;
-            $category = $input['category'] ?? '';
-            
-            $stmt = $pdo->prepare("UPDATE products SET name = ?, description = ?, price = ?, category = ? WHERE id = ?");
-            $stmt->execute([$name, $description, $price, $category, $id]);
-            echo json_encode(['success' => true]);
-            exit;
-            
-        case 'updatePrice':
-            $id = $input['id'] ?? 0;
-            $price = $input['price'] ?? 0;
-            
-            $stmt = $pdo->prepare("UPDATE products SET price = ? WHERE id = ?");
-            $stmt->execute([$price, $id]);
-            echo json_encode(['success' => true]);
-            exit;
-            
-        case 'deleteProduct':
-            $id = $input['id'] ?? 0;
-            
-            $stmt = $pdo->prepare("DELETE FROM products WHERE id = ?");
-            $stmt->execute([$id]);
-            echo json_encode(['success' => true]);
-            exit;
-    }
-    exit;
-}
-?>
-
 <!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sistema de Control de Precios</title>
+    <title>Sistema de Control de Precios - Firebase</title>
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
     <style>
-        /* (Mismo CSS que la versión anterior) */
+        /* (Mismo CSS que la versión anterior - mantener igual) */
         * {
             margin: 0;
             padding: 0;
@@ -582,27 +435,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             color: white;
         }
         
-        .loading {
-            text-align: center;
-            padding: 40px;
-            color: #666;
-        }
-        
-        .loading::after {
-            content: '';
-            display: inline-block;
-            width: 20px;
-            height: 20px;
+        .connection-status {
+            padding: 5px 10px;
+            border-radius: 5px;
+            font-size: 12px;
             margin-left: 10px;
-            border: 3px solid #f3f3f3;
-            border-top: 3px solid #667eea;
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
         }
         
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
+        .connection-status.online {
+            background: #48bb78;
+            color: white;
+        }
+        
+        .connection-status.offline {
+            background: #f56565;
+            color: white;
         }
         
         @media (max-width: 768px) {
@@ -630,7 +477,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <span>💰</span>
                 Sistema de Control de Precios
             </h1>
-            <div class="user-info" id="userInfo"></div>
+            <div class="user-info" id="userInfo">
+                <span id="connectionStatus" class="connection-status offline">Desconectado</span>
+            </div>
         </div>
         
         <div class="content">
@@ -681,7 +530,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 </div>
                 
                 <div id="productsContainer">
-                    <div class="loading">Cargando productos...</div>
+                    <div class="loading" style="text-align: center; padding: 40px;">Cargando productos...</div>
                 </div>
             </div>
         </div>
@@ -744,6 +593,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     
     <script>
         // ============================================
+        // CONFIGURACIÓN DE FIREBASE (REEMPLAZA CON TUS DATOS)
+        // ============================================
+        const firebaseConfig = {
+            apiKey: "TU_API_KEY",
+            authDomain: "lozano-1690859356322.firebaseapp.com",
+            databaseURL: "https://lozano-1690859356322-default-rtdb.firebaseio.com",
+            projectId: "lozano-1690859356322",
+            storageBucket: "lozano-1690859356322.appspot.com",
+            messagingSenderId: "TU_SENDER_ID",
+            appId: "TU_APP_ID"
+        };
+
+        // Inicializar Firebase
+        firebase.initializeApp(firebaseConfig);
+        const database = firebase.database();
+        
+        // Referencias a las rutas de la base de datos
+        const productsRef = database.ref('products');
+        const usersRef = database.ref('users');
+
+        // ============================================
         // VARIABLES GLOBALES
         // ============================================
         let currentUser = null;
@@ -751,21 +621,76 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         let currentCategory = 'all';
         let searchTerm = '';
         let products = [];
-        
+
         // ============================================
-        // FUNCIONES DE API
+        // INICIALIZACIÓN
         // ============================================
-        async function apiCall(action, data = {}) {
-            const response = await fetch('<?php echo $_SERVER['PHP_SELF']; ?>', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ action, ...data })
+        async function init() {
+            // Verificar conexión
+            const connectedRef = database.ref('.info/connected');
+            connectedRef.on('value', (snap) => {
+                const statusEl = document.getElementById('connectionStatus');
+                if (snap.val() === true) {
+                    statusEl.textContent = 'Conectado';
+                    statusEl.className = 'connection-status online';
+                } else {
+                    statusEl.textContent = 'Desconectado';
+                    statusEl.className = 'connection-status offline';
+                }
             });
-            return await response.json();
+
+            // Crear usuarios por defecto si no existen
+            await createDefaultUsers();
+            
+            // Escuchar cambios en productos en tiempo real
+            productsRef.on('value', (snapshot) => {
+                const data = snapshot.val();
+                if (data) {
+                    products = Object.entries(data).map(([id, product]) => ({
+                        id,
+                        ...product
+                    }));
+                } else {
+                    products = [];
+                }
+                loadProducts();
+            });
+
+            // Verificar sesión guardada
+            const savedUser = sessionStorage.getItem('currentUser');
+            if (savedUser) {
+                currentUser = JSON.parse(savedUser);
+                showMainScreen();
+            }
         }
-        
+
+        async function createDefaultUsers() {
+            const snapshot = await usersRef.once('value');
+            if (!snapshot.exists()) {
+                // Crear usuario admin
+                await usersRef.child('admin').set({
+                    username: 'admin',
+                    password: hashPassword('admin123'),
+                    role: 'admin',
+                    name: 'Administrador'
+                });
+                
+                // Crear usuario empleado
+                await usersRef.child('empleado').set({
+                    username: 'empleado',
+                    password: hashPassword('empleado123'),
+                    role: 'employee',
+                    name: 'Empleado'
+                });
+            }
+        }
+
+        function hashPassword(password) {
+            // Nota: En producción, esto debería hacerse en el backend
+            // Esta es una simulación simple para el ejemplo
+            return btoa(password); // No es seguro, solo para demostración
+        }
+
         // ============================================
         // FUNCIONES DE AUTENTICACIÓN
         // ============================================
@@ -773,51 +698,61 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             const username = document.getElementById('username').value;
             const password = document.getElementById('password').value;
             
-            const result = await apiCall('login', { username, password });
+            const snapshot = await usersRef.orderByChild('username').equalTo(username).once('value');
+            const userData = snapshot.val();
             
-            if (result.success) {
-                currentUser = result.user;
-                document.getElementById('loginScreen').style.display = 'none';
-                document.getElementById('mainScreen').style.display = 'block';
-                
-                document.getElementById('userInfo').innerHTML = `
-                    <span class="role-badge">👤 ${currentUser.name} (${currentUser.role === 'admin' ? 'Administrador' : 'Empleado'})</span>
-                    <button class="btn btn-logout" onclick="logout()">Cerrar Sesión</button>
-                `;
-                
-                if (currentUser.role === 'admin') {
-                    document.getElementById('adminTools').style.display = 'block';
+            if (userData) {
+                const user = Object.values(userData)[0];
+                if (atob(user.password) === password) { // Simulación de verificación
+                    currentUser = {
+                        username: user.username,
+                        role: user.role,
+                        name: user.name
+                    };
+                    sessionStorage.setItem('currentUser', JSON.stringify(currentUser));
+                    showMainScreen();
+                    showMessage('success', `¡Bienvenido, ${user.name}!`);
+                    return;
                 }
-                
-                await loadProducts();
-                showMessage('success', `¡Bienvenido, ${currentUser.name}!`);
-            } else {
-                showMessage('error', result.message || 'Credenciales incorrectas');
+            }
+            
+            showMessage('error', 'Usuario o contraseña incorrectos');
+        }
+
+        function showMainScreen() {
+            document.getElementById('loginScreen').style.display = 'none';
+            document.getElementById('mainScreen').style.display = 'block';
+            
+            document.getElementById('userInfo').innerHTML = `
+                <span class="role-badge">👤 ${currentUser.name} (${currentUser.role === 'admin' ? 'Administrador' : 'Empleado'})</span>
+                <button class="btn btn-logout" onclick="logout()">Cerrar Sesión</button>
+                <span id="connectionStatus" class="connection-status online">Conectado</span>
+            `;
+            
+            if (currentUser.role === 'admin') {
+                document.getElementById('adminTools').style.display = 'block';
             }
         }
-        
+
         function logout() {
             currentUser = null;
+            sessionStorage.removeItem('currentUser');
             document.getElementById('loginScreen').style.display = 'block';
             document.getElementById('mainScreen').style.display = 'none';
             document.getElementById('username').value = '';
             document.getElementById('password').value = '';
             document.getElementById('adminTools').style.display = 'none';
-            document.getElementById('userInfo').innerHTML = '';
+            document.getElementById('userInfo').innerHTML = '<span id="connectionStatus" class="connection-status offline">Desconectado</span>';
         }
-        
+
         // ============================================
         // FUNCIONES DE PRODUCTOS
         // ============================================
-        async function loadProducts() {
-            const result = await apiCall('getProducts');
-            if (result.success) {
-                products = result.products;
-                updateCategoryFilter();
-                filterProducts();
-            }
+        function loadProducts() {
+            updateCategoryFilter();
+            filterProducts();
         }
-        
+
         function updateCategoryFilter() {
             const categories = ['all', ...new Set(products.map(p => p.category).filter(c => c))];
             const filterContainer = document.getElementById('categoryFilter');
@@ -829,13 +764,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 </span>
             `).join('');
         }
-        
+
         function filterByCategory(category) {
             currentCategory = category;
             updateCategoryFilter();
             filterProducts();
         }
-        
+
         function filterProducts() {
             searchTerm = document.getElementById('searchInput').value.toLowerCase();
             
@@ -848,7 +783,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             
             displayProducts(filteredProducts);
         }
-        
+
         function displayProducts(productsToShow) {
             const container = document.getElementById('productsContainer');
             
@@ -875,9 +810,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                                min="0">
                                     </div>
                                     <div class="product-actions">
-                                        <button class="btn-save" onclick="quickUpdatePrice(${product.id})">Actualizar Precio</button>
-                                        <button class="btn-edit" onclick="openEditModal(${product.id})">Editar</button>
-                                        <button class="btn-delete" onclick="deleteProduct(${product.id})">Eliminar</button>
+                                        <button class="btn-save" onclick="quickUpdatePrice('${product.id}')">Actualizar Precio</button>
+                                        <button class="btn-edit" onclick="openEditModal('${product.id}')">Editar</button>
+                                        <button class="btn-delete" onclick="deleteProduct('${product.id}')">Eliminar</button>
                                     </div>
                                 ` : `
                                     <div class="product-price">$${Number(product.price).toFixed(2)}</div>
@@ -918,9 +853,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                     </td>
                                     ${currentUser?.role === 'admin' ? `
                                         <td>
-                                            <button class="btn-save" onclick="quickUpdatePrice(${product.id})" style="padding: 5px 10px; margin-right: 5px;">💾</button>
-                                            <button class="btn-edit" onclick="openEditModal(${product.id})" style="padding: 5px 10px; margin-right: 5px;">✏️</button>
-                                            <button class="btn-delete" onclick="deleteProduct(${product.id})" style="padding: 5px 10px;">🗑️</button>
+                                            <button class="btn-save" onclick="quickUpdatePrice('${product.id}')" style="padding: 5px 10px; margin-right: 5px;">💾</button>
+                                            <button class="btn-edit" onclick="openEditModal('${product.id}')" style="padding: 5px 10px; margin-right: 5px;">✏️</button>
+                                            <button class="btn-delete" onclick="deleteProduct('${product.id}')" style="padding: 5px 10px;">🗑️</button>
                                         </td>
                                     ` : ''}
                                 </tr>
@@ -930,14 +865,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 `;
             }
         }
-        
+
         function escapeHtml(text) {
             if (!text) return text;
             const div = document.createElement('div');
             div.textContent = text;
             return div.innerHTML;
         }
-        
+
         function toggleView(view) {
             currentView = view;
             const buttons = document.querySelectorAll('.view-toggle button');
@@ -945,7 +880,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             event.target.classList.add('active');
             filterProducts();
         }
-        
+
         // ============================================
         // FUNCIONES DE ADMINISTRACIÓN
         // ============================================
@@ -956,11 +891,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
             document.getElementById(modalId).classList.add('active');
         }
-        
+
         function closeModal(modalId) {
             document.getElementById(modalId).classList.remove('active');
         }
-        
+
         async function addProduct() {
             const name = document.getElementById('productName').value;
             const description = document.getElementById('productDescription').value;
@@ -972,29 +907,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 return;
             }
             
-            const result = await apiCall('addProduct', {
-                name, description, price, category
+            const newProductRef = productsRef.push();
+            await newProductRef.set({
+                name: name,
+                description: description,
+                price: price,
+                category: category
             });
             
-            if (result.success) {
-                document.getElementById('productName').value = '';
-                document.getElementById('productDescription').value = '';
-                document.getElementById('productPrice').value = '';
-                document.getElementById('productCategory').value = '';
-                
-                closeModal('addModal');
-                await loadProducts();
-                showMessage('success', 'Producto agregado correctamente');
-            }
+            document.getElementById('productName').value = '';
+            document.getElementById('productDescription').value = '';
+            document.getElementById('productPrice').value = '';
+            document.getElementById('productCategory').value = '';
+            
+            closeModal('addModal');
+            showMessage('success', 'Producto agregado correctamente');
         }
-        
+
         async function openEditModal(productId) {
             if (currentUser?.role !== 'admin') {
                 showMessage('error', 'No tienes permisos para realizar esta acción');
                 return;
             }
             
-            const product = products.find(p => p.id == productId);
+            const product = products.find(p => p.id === productId);
             if (product) {
                 document.getElementById('editProductId').value = product.id;
                 document.getElementById('editProductName').value = product.name;
@@ -1004,9 +940,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 openModal('editModal');
             }
         }
-        
+
         async function saveProductEdit() {
-            const id = parseInt(document.getElementById('editProductId').value);
+            const id = document.getElementById('editProductId').value;
             const name = document.getElementById('editProductName').value;
             const description = document.getElementById('editProductDescription').value;
             const price = parseFloat(document.getElementById('editProductPrice').value);
@@ -1017,17 +953,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 return;
             }
             
-            const result = await apiCall('updateProduct', {
-                id, name, description, price, category
+            await productsRef.child(id).update({
+                name: name,
+                description: description,
+                price: price,
+                category: category
             });
             
-            if (result.success) {
-                closeModal('editModal');
-                await loadProducts();
-                showMessage('success', 'Producto actualizado correctamente');
-            }
+            closeModal('editModal');
+            showMessage('success', 'Producto actualizado correctamente');
         }
-        
+
         async function quickUpdatePrice(productId) {
             if (currentUser?.role !== 'admin') {
                 showMessage('error', 'No tienes permisos para realizar esta acción');
@@ -1041,27 +977,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 return;
             }
             
-            const result = await apiCall('updatePrice', {
-                id: productId,
-                price: newPrice
-            });
+            await productsRef.child(productId).update({ price: newPrice });
+            showMessage('success', 'Precio actualizado correctamente');
             
-            if (result.success) {
-                await loadProducts();
-                showMessage('success', 'Precio actualizado correctamente');
-                
-                setTimeout(() => {
-                    const priceElement = document.getElementById(`price-${productId}`);
-                    if (priceElement) {
-                        priceElement.style.backgroundColor = '#ffff99';
-                        setTimeout(() => {
-                            priceElement.style.backgroundColor = '';
-                        }, 1000);
-                    }
-                }, 100);
-            }
+            setTimeout(() => {
+                const priceElement = document.getElementById(`price-${productId}`);
+                if (priceElement) {
+                    priceElement.style.backgroundColor = '#ffff99';
+                    setTimeout(() => {
+                        priceElement.style.backgroundColor = '';
+                    }, 1000);
+                }
+            }, 100);
         }
-        
+
         async function deleteProduct(productId) {
             if (currentUser?.role !== 'admin') {
                 showMessage('error', 'No tienes permisos para realizar esta acción');
@@ -1069,14 +998,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
             
             if (confirm('¿Estás seguro de eliminar este producto?')) {
-                const result = await apiCall('deleteProduct', { id: productId });
-                if (result.success) {
-                    await loadProducts();
-                    showMessage('success', 'Producto eliminado correctamente');
-                }
+                await productsRef.child(productId).remove();
+                showMessage('success', 'Producto eliminado correctamente');
             }
         }
-        
+
         // ============================================
         // FUNCIONES UTILITARIAS
         // ============================================
@@ -1088,34 +1014,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 container.innerHTML = '';
             }, 3000);
         }
-        
+
         window.onclick = function(event) {
             if (event.target.classList.contains('modal')) {
                 event.target.classList.remove('active');
             }
         }
-        
-        // Cargar productos si ya hay sesión (por si recarga la página)
-        window.onload = function() {
-            // Verificar si hay usuario en sessionStorage
-            const savedUser = sessionStorage.getItem('currentUser');
-            if (savedUser) {
-                currentUser = JSON.parse(savedUser);
-                document.getElementById('loginScreen').style.display = 'none';
-                document.getElementById('mainScreen').style.display = 'block';
-                
-                document.getElementById('userInfo').innerHTML = `
-                    <span class="role-badge">👤 ${currentUser.name} (${currentUser.role === 'admin' ? 'Administrador' : 'Empleado'})</span>
-                    <button class="btn btn-logout" onclick="logout()">Cerrar Sesión</button>
-                `;
-                
-                if (currentUser.role === 'admin') {
-                    document.getElementById('adminTools').style.display = 'block';
-                }
-                
-                loadProducts();
-            }
-        };
+
+        // Inicializar la aplicación
+        init();
     </script>
 </body>
 </html>
