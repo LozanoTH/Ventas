@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sistema de Control de Precios - Productos del Profesor</title>
-    <!-- Firebase SDKs -->
+    <title>Control de Precios - Productos del Profesor</title>
+    <!-- Firebase -->
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
     <style>
@@ -17,20 +17,28 @@
         body {
             font-family: 'Segoe UI', 'Calibri', 'Arial', sans-serif;
             background: #f0f2f5;
-            padding: 0;
-            margin: 0;
+            padding: 20px;
         }
         
-        /* Estilo Excel - Barra superior */
-        .excel-header {
+        /* ESTILO EXCEL */
+        .excel-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border: 1px solid #d0d7de;
+            border-radius: 4px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+        
+        /* Barra superior estilo Excel */
+        .excel-ribbon {
             background: #217346;
             color: white;
             padding: 8px 20px;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            border-bottom: 3px solid #1a5c38;
-            font-size: 14px;
+            border-bottom: 2px solid #1a5c38;
         }
         
         .excel-title {
@@ -42,7 +50,6 @@
         .excel-title h1 {
             font-size: 18px;
             font-weight: 500;
-            letter-spacing: 0.5px;
         }
         
         .excel-logo {
@@ -58,45 +65,20 @@
             font-size: 18px;
         }
         
-        .excel-user-info {
+        .excel-user {
             display: flex;
             align-items: center;
             gap: 15px;
         }
         
-        .excel-role {
+        .role-badge {
             background: rgba(255,255,255,0.2);
             padding: 4px 12px;
-            border-radius: 3px;
+            border-radius: 4px;
             font-size: 12px;
         }
         
-        .excel-logout {
-            background: transparent;
-            border: 1px solid rgba(255,255,255,0.3);
-            color: white;
-            padding: 4px 12px;
-            border-radius: 3px;
-            cursor: pointer;
-            font-size: 12px;
-        }
-        
-        .excel-logout:hover {
-            background: rgba(255,255,255,0.1);
-        }
-        
-        /* Barra de herramientas estilo Excel */
-        .excel-toolbar {
-            background: #f8f9fa;
-            padding: 8px 20px;
-            border-bottom: 1px solid #d0d7de;
-            display: flex;
-            gap: 15px;
-            align-items: center;
-            flex-wrap: wrap;
-        }
-        
-        .excel-toolbar button {
+        .excel-btn {
             background: white;
             border: 1px solid #d0d7de;
             padding: 6px 12px;
@@ -107,21 +89,41 @@
             align-items: center;
             gap: 5px;
             color: #24292e;
+            transition: all 0.2s;
         }
         
-        .excel-toolbar button:hover {
+        .excel-btn:hover {
             background: #e9ecef;
-            border-color: #adb5bd;
         }
         
-        .excel-toolbar button.primary {
+        .excel-btn.primary {
             background: #217346;
             border-color: #1a5c38;
             color: white;
         }
         
-        .excel-toolbar button.primary:hover {
+        .excel-btn.primary:hover {
             background: #1a5c38;
+        }
+        
+        .excel-btn.logout {
+            background: transparent;
+            border: 1px solid rgba(255,255,255,0.3);
+            color: white;
+        }
+        
+        .excel-btn.logout:hover {
+            background: rgba(255,255,255,0.1);
+        }
+        
+        /* Barra de herramientas */
+        .excel-toolbar {
+            background: #f8f9fa;
+            padding: 8px 20px;
+            border-bottom: 1px solid #d0d7de;
+            display: flex;
+            gap: 15px;
+            align-items: center;
         }
         
         .excel-search {
@@ -147,14 +149,9 @@
             color: #6c757d;
         }
         
-        /* Vista de hoja de cálculo (Excel) */
+        /* Hoja de cálculo */
         .excel-sheet {
-            background: white;
-            margin: 20px;
-            border: 1px solid #d0d7de;
-            border-radius: 4px;
-            overflow: hidden;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            padding: 20px;
         }
         
         .excel-table {
@@ -173,7 +170,6 @@
             border-right: 1px solid #dadce0;
             font-size: 13px;
             text-transform: uppercase;
-            letter-spacing: 0.5px;
         }
         
         .excel-table th:last-child {
@@ -194,7 +190,7 @@
             background: #f8f9fa;
         }
         
-        /* Estilos para celdas de precio */
+        /* Celdas de precio */
         .price-cell {
             font-family: 'Courier New', monospace;
             font-weight: 600;
@@ -216,12 +212,7 @@
             border-color: #1a5c38;
         }
         
-        .product-name {
-            font-weight: 500;
-            color: #202124;
-        }
-        
-        /* Unidad de medida */
+        /* Unidad */
         .unit-badge {
             background: #dee2e6;
             padding: 4px 8px;
@@ -231,7 +222,7 @@
             font-weight: 500;
         }
         
-        /* Acciones estilo Excel */
+        /* Acciones */
         .action-buttons {
             display: flex;
             gap: 5px;
@@ -251,286 +242,128 @@
             background: #e9ecef;
         }
         
-        .action-btn.edit:hover {
-            color: #1a73e8;
-        }
-        
-        .action-btn.delete:hover {
-            color: #d93025;
-        }
-        
+        .action-btn.edit:hover { color: #1a73e8; }
+        .action-btn.delete:hover { color: #d93025; }
         .action-btn.save {
             background: #217346;
             color: white;
         }
         
-        .action-btn.save:hover {
-            background: #1a5c38;
+        /* Barra de estado */
+        .excel-status {
+            background: #f8f9fa;
+            padding: 4px 20px;
+            border-top: 1px solid #d0d7de;
+            font-size: 12px;
+            color: #5f6368;
+            display: flex;
+            justify-content: space-between;
         }
         
-        /* Modal estilo Excel */
-        .excel-modal {
+        /* Pantalla de acceso */
+        .access-screen {
+            max-width: 400px;
+            margin: 50px auto;
+            background: white;
+            border: 1px solid #d0d7de;
+            border-radius: 4px;
+            text-align: center;
+        }
+        
+        .access-header {
+            background: #217346;
+            color: white;
+            padding: 30px;
+            border-radius: 4px 4px 0 0;
+        }
+        
+        .access-header .icon { font-size: 48px; margin-bottom: 10px; }
+        .access-header h2 { font-size: 24px; font-weight: 400; }
+        
+        .access-body { padding: 30px; }
+        
+        .access-btn {
+            width: 100%;
+            padding: 15px;
+            margin-bottom: 10px;
+            border: none;
+            border-radius: 4px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .access-btn.employee {
+            background: #28a745;
+            color: white;
+        }
+        
+        .access-btn.admin {
+            background: #3498db;
+            color: white;
+        }
+        
+        .access-btn:hover { transform: translateY(-2px); }
+        
+        /* Modal */
+        .modal {
             display: none;
             position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
+            top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(0,0,0,0.5);
             justify-content: center;
             align-items: center;
             z-index: 1000;
         }
         
-        .excel-modal.active {
-            display: flex;
-        }
+        .modal.active { display: flex; }
         
-        .excel-modal-content {
+        .modal-content {
             background: white;
             width: 500px;
             max-width: 90%;
             border-radius: 4px;
-            box-shadow: 0 4px 16px rgba(0,0,0,0.2);
         }
         
-        .excel-modal-header {
+        .modal-header {
             background: #f1f3f4;
             padding: 16px 20px;
             border-bottom: 1px solid #dadce0;
         }
         
-        .excel-modal-header h3 {
-            color: #202124;
-            font-size: 16px;
-            font-weight: 500;
-        }
+        .modal-body { padding: 20px; }
         
-        .excel-modal-body {
-            padding: 20px;
-        }
-        
-        .excel-modal-footer {
+        .modal-footer {
             padding: 16px 20px;
             border-top: 1px solid #dadce0;
             text-align: right;
         }
         
-        .excel-form-group {
-            margin-bottom: 16px;
-        }
-        
-        .excel-form-group label {
-            display: block;
-            margin-bottom: 6px;
-            color: #5f6368;
-            font-size: 13px;
-            font-weight: 500;
-        }
-        
-        .excel-form-group input,
-        .excel-form-group select {
+        .modal-body input,
+        .modal-body select {
             width: 100%;
             padding: 8px 12px;
+            margin-bottom: 15px;
             border: 1px solid #dadce0;
             border-radius: 4px;
-            font-size: 14px;
         }
         
-        .excel-form-group input:focus,
-        .excel-form-group select:focus {
-            outline: none;
-            border-color: #217346;
-        }
-        
-        .unit-selector {
-            display: flex;
-            gap: 10px;
-            align-items: center;
-        }
-        
-        .unit-selector select {
-            width: 120px;
-        }
-        
-        /* Mensajes estilo Excel */
-        .excel-message {
+        /* Mensajes */
+        .message {
             position: fixed;
             top: 20px;
             right: 20px;
             padding: 12px 20px;
-            background: white;
-            border-left: 4px solid #217346;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+            background: #217346;
+            color: white;
             border-radius: 4px;
             z-index: 2000;
-            animation: slideIn 0.3s ease;
-        }
-        
-        .excel-message.error {
-            border-left-color: #d93025;
+            animation: slideIn 0.3s;
         }
         
         @keyframes slideIn {
-            from {
-                transform: translateX(100%);
-                opacity: 0;
-            }
-            to {
-                transform: translateX(0);
-                opacity: 1;
-            }
-        }
-        
-        /* Pantalla de acceso simplificado */
-        .access-screen {
-            max-width: 400px;
-            margin: 100px auto;
-            background: white;
-            border: 1px solid #d0d7de;
-            border-radius: 4px;
-            box-shadow: 0 4px 16px rgba(0,0,0,0.1);
-        }
-        
-        .access-header {
-            background: #217346;
-            color: white;
-            padding: 30px 20px;
-            text-align: center;
-            border-radius: 4px 4px 0 0;
-        }
-        
-        .access-header .icon {
-            font-size: 48px;
-            margin-bottom: 10px;
-        }
-        
-        .access-header h2 {
-            font-size: 24px;
-            font-weight: 400;
-            margin-bottom: 5px;
-        }
-        
-        .access-header p {
-            font-size: 14px;
-            opacity: 0.9;
-        }
-        
-        .access-body {
-            padding: 30px;
-        }
-        
-        .employee-btn {
-            background: #28a745;
-            color: white;
-            border: none;
-            width: 100%;
-            padding: 15px;
-            font-size: 18px;
-            border-radius: 4px;
-            cursor: pointer;
-            margin-bottom: 20px;
-            transition: background 0.3s;
-        }
-        
-        .employee-btn:hover {
-            background: #218838;
-        }
-        
-        .admin-toggle {
-            text-align: center;
-            margin-top: 20px;
-        }
-        
-        .admin-toggle button {
-            background: none;
-            border: none;
-            color: #217346;
-            cursor: pointer;
-            font-size: 14px;
-            text-decoration: underline;
-        }
-        
-        .admin-toggle button:hover {
-            color: #1a5c38;
-        }
-        
-        .admin-login {
-            display: none;
-            margin-top: 20px;
-            padding-top: 20px;
-            border-top: 1px solid #dee2e6;
-        }
-        
-        .admin-login.show {
-            display: block;
-        }
-        
-        .back-btn {
-            background: none;
-            border: none;
-            color: #6c757d;
-            cursor: pointer;
-            font-size: 14px;
-            margin-bottom: 15px;
-            display: flex;
-            align-items: center;
-            gap: 5px;
-        }
-        
-        .back-btn:hover {
-            color: #495057;
-        }
-        
-        /* Indicador de conexión */
-        .connection-status {
-            font-size: 11px;
-            padding: 3px 8px;
-            border-radius: 3px;
-            background: #dc3545;
-            color: white;
-        }
-        
-        .connection-status.online {
-            background: #28a745;
-        }
-        
-        /* Barra de búsqueda simplificada */
-        .search-container {
-            margin: 10px 20px;
-            display: flex;
-            justify-content: flex-end;
-        }
-        
-        /* Responsive */
-        @media (max-width: 768px) {
-            .excel-header {
-                flex-direction: column;
-                gap: 10px;
-                text-align: center;
-            }
-            
-            .excel-toolbar {
-                flex-direction: column;
-                align-items: stretch;
-            }
-            
-            .excel-search {
-                max-width: none;
-            }
-            
-            .excel-table {
-                font-size: 12px;
-            }
-            
-            .excel-table th,
-            .excel-table td {
-                padding: 8px;
-            }
-            
-            .price-cell input {
-                width: 80px;
-            }
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
         }
     </style>
 </head>
@@ -544,173 +377,121 @@
                 <p>Productos del Profesor</p>
             </div>
             <div class="access-body">
-                <!-- Botón para empleados (acceso directo) -->
-                <button class="employee-btn" onclick="enterAsEmployee()">
+                <button class="access-btn employee" onclick="enterAs('employee')">
                     👤 Ingresar como Empleado
                 </button>
-                
-                <!-- Opción para administrador -->
-                <div class="admin-toggle">
-                    <button onclick="showAdminLogin()">🔐 Acceso de Administrador</button>
-                </div>
-                
-                <!-- Formulario de login para admin -->
-                <div id="adminLogin" class="admin-login">
-                    <button class="back-btn" onclick="hideAdminLogin()">
-                        ← Volver
-                    </button>
-                    <div class="excel-form-group">
-                        <label>Usuario</label>
-                        <input type="text" id="adminUsername" placeholder="admin">
-                    </div>
-                    <div class="excel-form-group">
-                        <label>Contraseña</label>
-                        <input type="password" id="adminPassword" placeholder="••••••">
-                    </div>
-                    <button onclick="adminLogin()" class="action-btn save" style="width: 100%; padding: 10px;">
-                        Ingresar como Administrador
-                    </button>
-                </div>
+                <button class="access-btn admin" onclick="enterAs('admin')">
+                    🔑 Ingresar como Administrador
+                </button>
+                <p style="margin-top: 20px; color: #666; font-size: 12px;">
+                    Admin: puede editar • Empleado: solo visual
+                </p>
             </div>
         </div>
     </div>
 
-    <!-- Pantalla Principal (después del acceso) -->
+    <!-- Pantalla Principal -->
     <div id="mainScreen" style="display: none;">
-        <!-- Header estilo Excel -->
-        <div class="excel-header">
-            <div class="excel-title">
-                <div class="excel-logo">📊</div>
-                <h1>Control de Precios - Productos del Profesor</h1>
-            </div>
-            <div class="excel-user-info" id="userInfo">
-                <span id="connectionStatus" class="connection-status offline">Desconectado</span>
-            </div>
-        </div>
-
-        <!-- Barra de herramientas (solo visible para admin) -->
-        <div class="excel-toolbar" id="adminTools" style="display: none;">
-            <button class="primary" onclick="openModal('addModal')">
-                <span>➕</span> Agregar Producto
-            </button>
-            <button onclick="exportToExcel()">
-                <span>📥</span> Exportar
-            </button>
-            <div class="excel-search">
-                <input type="text" id="searchInput" placeholder="Buscar producto..." onkeyup="filterProducts()">
-            </div>
-        </div>
-
-        <!-- Barra de búsqueda para empleados -->
-        <div class="search-container" id="employeeSearch" style="display: none;">
-            <div class="excel-search" style="max-width: 300px;">
-                <input type="text" id="employeeSearchInput" placeholder="Buscar producto..." onkeyup="filterProducts()">
-            </div>
-        </div>
-
-        <!-- Hoja de cálculo (Excel) -->
-        <div class="excel-sheet">
-            <table class="excel-table">
-                <thead>
-                    <tr>
-                        <th>Producto</th>
-                        <th>Unidad</th>
-                        <th>Precio</th>
-                        <th id="adminActionsHeader" style="display: none;">Acciones</th>
-                    </tr>
-                </thead>
-                <tbody id="productsTableBody">
-                    <tr>
-                        <td colspan="4" style="text-align: center; padding: 40px; color: #666;">
-                            Cargando productos...
-                        </td>
-                    </tr>
-                </tbody>
-            </table>
-        </div>
-
-        <!-- Barra de estado estilo Excel -->
-        <div style="background: #f8f9fa; padding: 4px 20px; border-top: 1px solid #d0d7de; font-size: 12px; color: #5f6368;">
-            <span id="totalProducts">0</span> productos | Última actualización: <span id="lastUpdate">-</span>
-        </div>
-    </div>
-
-    <!-- Modal para agregar producto -->
-    <div id="addModal" class="excel-modal">
-        <div class="excel-modal-content">
-            <div class="excel-modal-header">
-                <h3>Agregar Nuevo Producto</h3>
-            </div>
-            <div class="excel-modal-body">
-                <div class="excel-form-group">
-                    <label>Nombre del Producto *</label>
-                    <input type="text" id="productName" placeholder="Ej: Plátano">
+        <div class="excel-container">
+            <!-- Ribbon estilo Excel -->
+            <div class="excel-ribbon">
+                <div class="excel-title">
+                    <div class="excel-logo">📊</div>
+                    <h1>Control de Precios - Productos del Profesor</h1>
                 </div>
-                <div class="excel-form-group">
-                    <label>Unidad de Medida</label>
-                    <div class="unit-selector">
-                        <select id="productUnit">
-                            <option value="kilo">Kilo (kg)</option>
-                            <option value="libra">Libra (lb)</option>
-                            <option value="unidad">Unidad</option>
-                            <option value="docena">Docena</option>
-                            <option value="litro">Litro</option>
-                        </select>
-                    </div>
-                </div>
-                <div class="excel-form-group">
-                    <label>Precio *</label>
-                    <input type="number" id="productPrice" step="100" min="0" placeholder="Ej: 2000">
-                    <small style="color: #6c757d; display: block; margin-top: 4px;">Precio en pesos colombianos</small>
+                <div class="excel-user">
+                    <span class="role-badge" id="roleDisplay"></span>
+                    <button class="excel-btn logout" onclick="logout()">Cerrar Sesión</button>
                 </div>
             </div>
-            <div class="excel-modal-footer">
-                <button class="action-btn" onclick="closeModal('addModal')" style="margin-right: 10px;">Cancelar</button>
-                <button class="action-btn save" onclick="addProduct()">Guardar Producto</button>
+
+            <!-- Barra de herramientas (solo admin) -->
+            <div id="adminToolbar" class="excel-toolbar" style="display: none;">
+                <button class="excel-btn primary" onclick="openModal('addModal')">
+                    ➕ Agregar Producto
+                </button>
+                <div class="excel-search">
+                    <input type="text" id="adminSearch" placeholder="Buscar producto..." onkeyup="filterProducts()">
+                </div>
+            </div>
+
+            <!-- Barra de búsqueda para empleados -->
+            <div id="employeeToolbar" class="excel-toolbar" style="display: none;">
+                <div class="excel-search" style="max-width: none;">
+                    <input type="text" id="employeeSearch" placeholder="Buscar producto..." onkeyup="filterProducts()">
+                </div>
+            </div>
+
+            <!-- Hoja de cálculo -->
+            <div class="excel-sheet">
+                <table class="excel-table">
+                    <thead>
+                        <tr>
+                            <th>Producto</th>
+                            <th>Unidad</th>
+                            <th>Precio</th>
+                            <th id="actionsHeader" style="display: none;">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody id="productsTable"></tbody>
+                </table>
+            </div>
+
+            <!-- Barra de estado -->
+            <div class="excel-status">
+                <span id="totalProducts">0 productos</span>
+                <span id="lastUpdate"></span>
             </div>
         </div>
     </div>
 
-    <!-- Modal para editar producto -->
-    <div id="editModal" class="excel-modal">
-        <div class="excel-modal-content">
-            <div class="excel-modal-header">
-                <h3>Editar Producto</h3>
+    <!-- Modal Agregar -->
+    <div id="addModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>➕ Agregar Producto</h3>
             </div>
-            <div class="excel-modal-body">
+            <div class="modal-body">
+                <input type="text" id="productName" placeholder="Nombre del producto">
+                <select id="productUnit">
+                    <option value="kilo">Kilo (kg)</option>
+                    <option value="libra">Libra (lb)</option>
+                    <option value="unidad">Unidad</option>
+                </select>
+                <input type="number" id="productPrice" placeholder="Precio" step="100">
+            </div>
+            <div class="modal-footer">
+                <button class="excel-btn" onclick="closeModal('addModal')">Cancelar</button>
+                <button class="excel-btn primary" onclick="addProduct()">Guardar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Editar -->
+    <div id="editModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>✏️ Editar Producto</h3>
+            </div>
+            <div class="modal-body">
                 <input type="hidden" id="editProductId">
-                <div class="excel-form-group">
-                    <label>Nombre del Producto *</label>
-                    <input type="text" id="editProductName">
-                </div>
-                <div class="excel-form-group">
-                    <label>Unidad de Medida</label>
-                    <div class="unit-selector">
-                        <select id="editProductUnit">
-                            <option value="kilo">Kilo (kg)</option>
-                            <option value="libra">Libra (lb)</option>
-                            <option value="unidad">Unidad</option>
-                            <option value="docena">Docena</option>
-                            <option value="litro">Litro</option>
-                        </select>
-                    </div>
-                </div>
-                <div class="excel-form-group">
-                    <label>Precio *</label>
-                    <input type="number" id="editProductPrice" step="100">
-                </div>
+                <input type="text" id="editProductName" placeholder="Nombre">
+                <select id="editProductUnit">
+                    <option value="kilo">Kilo (kg)</option>
+                    <option value="libra">Libra (lb)</option>
+                    <option value="unidad">Unidad</option>
+                </select>
+                <input type="number" id="editProductPrice" placeholder="Precio" step="100">
             </div>
-            <div class="excel-modal-footer">
-                <button class="action-btn" onclick="closeModal('editModal')" style="margin-right: 10px;">Cancelar</button>
-                <button class="action-btn save" onclick="saveProductEdit()">Actualizar</button>
+            <div class="modal-footer">
+                <button class="excel-btn" onclick="closeModal('editModal')">Cancelar</button>
+                <button class="excel-btn primary" onclick="saveEdit()">Actualizar</button>
             </div>
         </div>
     </div>
 
     <script>
-        // ============================================
-        // CONFIGURACIÓN DE FIREBASE
-        // ============================================
+        // Firebase
         const firebaseConfig = {
             apiKey: "TU_API_KEY",
             authDomain: "lozano-1690859356322.firebaseapp.com",
@@ -721,270 +502,118 @@
             appId: "TU_APP_ID"
         };
 
-        // Inicializar Firebase
         firebase.initializeApp(firebaseConfig);
         const database = firebase.database();
-        
-        // Referencias
         const productsRef = database.ref('productos');
-        const usersRef = database.ref('usuarios');
 
-        // ============================================
-        // VARIABLES GLOBALES
-        // ============================================
-        let currentUser = null;
-        let searchTerm = '';
+        // Variables
+        let currentRole = null;
         let products = [];
 
-        // ============================================
-        // INICIALIZACIÓN
-        // ============================================
-        async function init() {
-            // Verificar conexión
-            const connectedRef = database.ref('.info/connected');
-            connectedRef.on('value', (snap) => {
-                const statusEl = document.getElementById('connectionStatus');
-                if (snap.val() === true) {
-                    statusEl.textContent = 'Conectado';
-                    statusEl.className = 'connection-status online';
-                } else {
-                    statusEl.textContent = 'Desconectado';
-                    statusEl.className = 'connection-status offline';
-                }
-            });
+        // Cargar productos
+        productsRef.on('value', (snapshot) => {
+            const data = snapshot.val();
+            products = data ? Object.entries(data).map(([id, p]) => ({ id, ...p })) : [];
+            if (currentRole) displayProducts();
+        });
 
-            // Crear usuarios por defecto (solo admin)
-            await createDefaultUsers();
+        // Acceso
+        function enterAs(role) {
+            currentRole = role;
+            sessionStorage.setItem('userRole', role);
             
-            // Escuchar cambios en productos
-            productsRef.on('value', (snapshot) => {
-                const data = snapshot.val();
-                if (data) {
-                    products = Object.entries(data).map(([id, product]) => ({
-                        id,
-                        ...product
-                    }));
-                } else {
-                    products = [];
-                }
-                
-                if (currentUser) {
-                    updateDisplay();
-                    document.getElementById('totalProducts').textContent = products.length;
-                    document.getElementById('lastUpdate').textContent = new Date().toLocaleTimeString();
-                }
-            });
-
-            // Verificar sesión guardada
-            const savedUser = sessionStorage.getItem('currentUser');
-            if (savedUser) {
-                currentUser = JSON.parse(savedUser);
-                showMainScreen();
-            }
-        }
-
-        async function createDefaultUsers() {
-            const snapshot = await usersRef.once('value');
-            if (!snapshot.exists()) {
-                await usersRef.child('admin').set({
-                    username: 'admin',
-                    password: btoa('admin123'),
-                    role: 'admin',
-                    name: 'Administrador'
-                });
-            }
-        }
-
-        // ============================================
-        // FUNCIONES DE ACCESO
-        // ============================================
-        function enterAsEmployee() {
-            currentUser = {
-                username: 'empleado',
-                role: 'employee',
-                name: 'Empleado'
-            };
-            sessionStorage.setItem('currentUser', JSON.stringify(currentUser));
-            showMainScreen();
-            showMessage('Bienvenido, Empleado');
-        }
-
-        function showAdminLogin() {
-            document.getElementById('adminLogin').classList.add('show');
-        }
-
-        function hideAdminLogin() {
-            document.getElementById('adminLogin').classList.remove('show');
-        }
-
-        async function adminLogin() {
-            const username = document.getElementById('adminUsername').value || 'admin';
-            const password = document.getElementById('adminPassword').value;
-            
-            const snapshot = await usersRef.orderByChild('username').equalTo(username).once('value');
-            const userData = snapshot.val();
-            
-            if (userData) {
-                const user = Object.values(userData)[0];
-                if (atob(user.password) === password) {
-                    currentUser = {
-                        username: user.username,
-                        role: user.role,
-                        name: user.name
-                    };
-                    sessionStorage.setItem('currentUser', JSON.stringify(currentUser));
-                    showMainScreen();
-                    showMessage('Bienvenido, ' + user.name);
-                    return;
-                }
-            }
-            
-            showMessage('Contraseña incorrecta', 'error');
-        }
-
-        function showMainScreen() {
             document.getElementById('accessScreen').style.display = 'none';
             document.getElementById('mainScreen').style.display = 'block';
             
-            document.getElementById('userInfo').innerHTML = `
-                <span class="excel-role">👤 ${currentUser.name} (${currentUser.role === 'admin' ? 'Admin' : 'Empleado'})</span>
-                <button class="excel-logout" onclick="logout()">Cerrar Sesión</button>
-                <span id="connectionStatus" class="connection-status online">Conectado</span>
-            `;
+            const roleDisplay = document.getElementById('roleDisplay');
+            roleDisplay.textContent = role === 'admin' ? '👤 Administrador' : '👤 Empleado';
             
-            if (currentUser.role === 'admin') {
-                document.getElementById('adminTools').style.display = 'flex';
-                document.getElementById('adminActionsHeader').style.display = 'table-cell';
-                document.getElementById('employeeSearch').style.display = 'none';
+            if (role === 'admin') {
+                document.getElementById('adminToolbar').style.display = 'flex';
+                document.getElementById('employeeToolbar').style.display = 'none';
+                document.getElementById('actionsHeader').style.display = 'table-cell';
             } else {
-                document.getElementById('adminTools').style.display = 'none';
-                document.getElementById('adminActionsHeader').style.display = 'none';
-                document.getElementById('employeeSearch').style.display = 'block';
+                document.getElementById('adminToolbar').style.display = 'none';
+                document.getElementById('employeeToolbar').style.display = 'flex';
+                document.getElementById('actionsHeader').style.display = 'none';
             }
             
-            // Cargar productos
-            updateDisplay();
-            document.getElementById('totalProducts').textContent = products.length;
-            document.getElementById('lastUpdate').textContent = new Date().toLocaleTimeString();
+            displayProducts();
         }
 
         function logout() {
-            currentUser = null;
-            sessionStorage.removeItem('currentUser');
+            currentRole = null;
+            sessionStorage.removeItem('userRole');
             document.getElementById('accessScreen').style.display = 'block';
             document.getElementById('mainScreen').style.display = 'none';
-            document.getElementById('adminLogin').classList.remove('show');
-            document.getElementById('adminUsername').value = '';
-            document.getElementById('adminPassword').value = '';
         }
 
-        // ============================================
-        // FUNCIONES DE PRODUCTOS
-        // ============================================
-        function updateDisplay() {
-            filterProducts();
-        }
-
+        // Mostrar productos
         function filterProducts() {
-            // Obtener término de búsqueda del input correcto según el rol
-            if (currentUser?.role === 'admin') {
-                searchTerm = document.getElementById('searchInput')?.value.toLowerCase() || '';
-            } else {
-                searchTerm = document.getElementById('employeeSearchInput')?.value.toLowerCase() || '';
-            }
-            
-            const filteredProducts = products.filter(product => {
-                return product.name.toLowerCase().includes(searchTerm);
-            });
-            
-            displayProducts(filteredProducts);
+            displayProducts();
         }
 
-        function formatPrice(price) {
-            return new Intl.NumberFormat('es-CO', {
-                style: 'currency',
-                currency: 'COP',
-                minimumFractionDigits: 0,
-                maximumFractionDigits: 0
-            }).format(price).replace('COP', '$');
-        }
-
-        function getUnitLabel(unit) {
-            const units = {
-                'kilo': 'kg',
-                'libra': 'lb',
-                'unidad': 'unidad',
-                'docena': 'docena',
-                'litro': 'L'
-            };
-            return units[unit] || unit;
-        }
-
-        function displayProducts(productsToShow) {
-            const tbody = document.getElementById('productsTableBody');
+        function displayProducts() {
+            const searchTerm = currentRole === 'admin' 
+                ? document.getElementById('adminSearch').value.toLowerCase()
+                : document.getElementById('employeeSearch').value.toLowerCase();
             
-            if (productsToShow.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; padding: 40px;">No se encontraron productos</td></tr>';
+            const filtered = products.filter(p => 
+                p.name.toLowerCase().includes(searchTerm)
+            );
+            
+            const tbody = document.getElementById('productsTable');
+            
+            if (filtered.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; padding: 40px;">No hay productos</td></tr>';
                 return;
             }
             
-            tbody.innerHTML = productsToShow.map(product => {
-                const unit = product.unit || 'kilo';
-                const unitLabel = getUnitLabel(unit);
+            tbody.innerHTML = filtered.map(p => {
+                const unitLabel = p.unit === 'kilo' ? 'kg' : (p.unit === 'libra' ? 'lb' : 'unidad');
+                const priceFormatted = '$' + p.price.toLocaleString('es-CO');
                 
-                return `
-                    <tr>
-                        <td class="product-name">${escapeHtml(product.name)}</td>
-                        <td>
-                            <span class="unit-badge">${unitLabel}</span>
-                        </td>
-                        <td class="price-cell">
-                            ${currentUser?.role === 'admin' ? `
-                                <div style="display: flex; gap: 5px; align-items: center;">
-                                    <input type="number" id="price-${product.id}" 
-                                           value="${product.price}" 
-                                           step="100" 
-                                           min="0"
-                                           style="width: 120px;">
-                                    <button class="action-btn save" onclick="quickUpdatePrice('${product.id}')" style="padding: 4px 8px;">💾</button>
-                                </div>
-                            ` : `
-                                <span class="price-cell">${formatPrice(product.price)} / ${unitLabel}</span>
-                            `}
-                        </td>
-                        ${currentUser?.role === 'admin' ? `
-                            <td>
-                                <div class="action-buttons">
-                                    <button class="action-btn edit" onclick="openEditModal('${product.id}')">✏️ Editar</button>
-                                    <button class="action-btn delete" onclick="deleteProduct('${product.id}')">🗑️ Eliminar</button>
+                if (currentRole === 'admin') {
+                    return `
+                        <tr>
+                            <td class="product-name">${p.name}</td>
+                            <td><span class="unit-badge">${unitLabel}</span></td>
+                            <td class="price-cell">
+                                <div style="display: flex; gap: 5px;">
+                                    <input type="number" id="price-${p.id}" value="${p.price}" step="100">
+                                    <button class="action-btn save" onclick="updatePrice('${p.id}')">💾</button>
                                 </div>
                             </td>
-                        ` : ''}
-                    </tr>
-                `;
+                            <td>
+                                <div class="action-buttons">
+                                    <button class="action-btn edit" onclick="openEditModal('${p.id}')">✏️ Editar</button>
+                                    <button class="action-btn delete" onclick="deleteProduct('${p.id}')">🗑️ Eliminar</button>
+                                </div>
+                            </td>
+                        </tr>
+                    `;
+                } else {
+                    return `
+                        <tr>
+                            <td class="product-name">${p.name}</td>
+                            <td><span class="unit-badge">${unitLabel}</span></td>
+                            <td class="price-cell">${priceFormatted} / ${unitLabel}</td>
+                        </tr>
+                    `;
+                }
             }).join('');
+            
+            document.getElementById('totalProducts').textContent = `${products.length} productos`;
+            document.getElementById('lastUpdate').textContent = new Date().toLocaleTimeString();
         }
 
-        function escapeHtml(text) {
-            if (!text) return text;
-            const div = document.createElement('div');
-            div.textContent = text;
-            return div.innerHTML;
+        // Admin functions
+        function openModal(id) {
+            document.getElementById(id).classList.add('active');
         }
 
-        // ============================================
-        // FUNCIONES DE ADMINISTRACIÓN
-        // ============================================
-        function openModal(modalId) {
-            if (currentUser?.role !== 'admin') {
-                showMessage('No tienes permisos', 'error');
-                return;
-            }
-            document.getElementById(modalId).classList.add('active');
-        }
-
-        function closeModal(modalId) {
-            document.getElementById(modalId).classList.remove('active');
+        function closeModal(id) {
+            document.getElementById(id).classList.remove('active');
         }
 
         async function addProduct() {
@@ -992,126 +621,75 @@
             const unit = document.getElementById('productUnit').value;
             const price = parseInt(document.getElementById('productPrice').value);
             
-            if (!name || !price || price <= 0) {
-                showMessage('Nombre y precio válido son obligatorios', 'error');
+            if (!name || !price) {
+                alert('Completa todos los campos');
                 return;
             }
             
-            await productsRef.push({
-                name: name,
-                unit: unit,
-                price: price,
-                createdBy: currentUser.username,
-                createdAt: firebase.database.ServerValue.TIMESTAMP
-            });
+            await productsRef.push({ name, unit, price });
             
-            // Limpiar formulario
             document.getElementById('productName').value = '';
             document.getElementById('productPrice').value = '';
-            
             closeModal('addModal');
-            showMessage('Producto agregado correctamente');
+            showMessage('✅ Producto agregado');
         }
 
-        async function openEditModal(productId) {
-            const product = products.find(p => p.id === productId);
-            if (product) {
-                document.getElementById('editProductId').value = product.id;
-                document.getElementById('editProductName').value = product.name;
-                document.getElementById('editProductUnit').value = product.unit || 'kilo';
-                document.getElementById('editProductPrice').value = product.price;
-                openModal('editModal');
-            }
+        function openEditModal(id) {
+            const p = products.find(p => p.id === id);
+            document.getElementById('editProductId').value = p.id;
+            document.getElementById('editProductName').value = p.name;
+            document.getElementById('editProductUnit').value = p.unit;
+            document.getElementById('editProductPrice').value = p.price;
+            openModal('editModal');
         }
 
-        async function saveProductEdit() {
+        async function saveEdit() {
             const id = document.getElementById('editProductId').value;
             const name = document.getElementById('editProductName').value;
             const unit = document.getElementById('editProductUnit').value;
             const price = parseInt(document.getElementById('editProductPrice').value);
             
-            if (!name || !price || price <= 0) {
-                showMessage('Nombre y precio válido son obligatorios', 'error');
-                return;
-            }
-            
-            await productsRef.child(id).update({
-                name: name,
-                unit: unit,
-                price: price,
-                updatedBy: currentUser.username,
-                updatedAt: firebase.database.ServerValue.TIMESTAMP
-            });
+            await productsRef.child(id).update({ name, unit, price });
             
             closeModal('editModal');
-            showMessage('Producto actualizado correctamente');
+            showMessage('✅ Producto actualizado');
         }
 
-        async function quickUpdatePrice(productId) {
-            const newPrice = parseInt(document.getElementById(`price-${productId}`).value);
+        async function updatePrice(id) {
+            const newPrice = parseInt(document.getElementById(`price-${id}`).value);
+            await productsRef.child(id).update({ price: newPrice });
             
-            if (newPrice <= 0) {
-                showMessage('El precio debe ser mayor a 0', 'error');
-                return;
-            }
-            
-            await productsRef.child(productId).update({ 
-                price: newPrice,
-                updatedBy: currentUser.username,
-                updatedAt: firebase.database.ServerValue.TIMESTAMP
-            });
-            
-            showMessage('Precio actualizado');
-            
-            // Resaltar la celda
-            const input = document.getElementById(`price-${productId}`);
+            const input = document.getElementById(`price-${id}`);
             input.style.backgroundColor = '#d4edda';
             setTimeout(() => input.style.backgroundColor = '', 1000);
+            showMessage('💰 Precio actualizado');
         }
 
-        async function deleteProduct(productId) {
-            if (confirm('¿Eliminar este producto?')) {
-                await productsRef.child(productId).remove();
-                showMessage('Producto eliminado');
+        async function deleteProduct(id) {
+            if (confirm('¿Eliminar producto?')) {
+                await productsRef.child(id).remove();
+                showMessage('🗑️ Producto eliminado');
             }
         }
 
-        function exportToExcel() {
-            let csv = "Producto,Unidad,Precio\n";
-            
-            products.forEach(p => {
-                const unitLabel = getUnitLabel(p.unit || 'kilo');
-                csv += `"${p.name}",${unitLabel},${p.price}\n`;
-            });
-            
-            const blob = new Blob([csv], { type: 'text/csv' });
-            const url = window.URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `productos_${new Date().toISOString().slice(0,10)}.csv`;
-            a.click();
-        }
-
-        // ============================================
-        // FUNCIONES UTILITARIAS
-        // ============================================
-        function showMessage(text, type = 'success') {
+        function showMessage(text) {
             const msg = document.createElement('div');
-            msg.className = `excel-message ${type}`;
+            msg.className = 'message';
             msg.textContent = text;
             document.body.appendChild(msg);
-            
-            setTimeout(() => msg.remove(), 3000);
+            setTimeout(() => msg.remove(), 2000);
         }
 
-        window.onclick = function(event) {
-            if (event.target.classList.contains('excel-modal')) {
-                event.target.classList.remove('active');
+        // Cerrar modales
+        window.onclick = (e) => {
+            if (e.target.classList.contains('modal')) {
+                e.target.classList.remove('active');
             }
         }
 
-        // Inicializar
-        init();
+        // Auto-login si hay sesión
+        const savedRole = sessionStorage.getItem('userRole');
+        if (savedRole) enterAs(savedRole);
     </script>
 </body>
 </html>
