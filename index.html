@@ -382,8 +382,8 @@
             }
         }
         
-        /* Login estilo Excel */
-        .excel-login {
+        /* Pantalla de acceso simplificado */
+        .access-screen {
             max-width: 400px;
             margin: 100px auto;
             background: white;
@@ -392,25 +392,94 @@
             box-shadow: 0 4px 16px rgba(0,0,0,0.1);
         }
         
-        .excel-login-header {
+        .access-header {
             background: #217346;
             color: white;
-            padding: 20px;
+            padding: 30px 20px;
             text-align: center;
             border-radius: 4px 4px 0 0;
         }
         
-        .excel-login-body {
+        .access-header .icon {
+            font-size: 48px;
+            margin-bottom: 10px;
+        }
+        
+        .access-header h2 {
+            font-size: 24px;
+            font-weight: 400;
+            margin-bottom: 5px;
+        }
+        
+        .access-header p {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+        
+        .access-body {
             padding: 30px;
         }
         
-        .excel-login-footer {
-            padding: 20px;
-            background: #f8f9fa;
-            border-top: 1px solid #d0d7de;
+        .employee-btn {
+            background: #28a745;
+            color: white;
+            border: none;
+            width: 100%;
+            padding: 15px;
+            font-size: 18px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-bottom: 20px;
+            transition: background 0.3s;
+        }
+        
+        .employee-btn:hover {
+            background: #218838;
+        }
+        
+        .admin-toggle {
             text-align: center;
-            font-size: 12px;
+            margin-top: 20px;
+        }
+        
+        .admin-toggle button {
+            background: none;
+            border: none;
+            color: #217346;
+            cursor: pointer;
+            font-size: 14px;
+            text-decoration: underline;
+        }
+        
+        .admin-toggle button:hover {
+            color: #1a5c38;
+        }
+        
+        .admin-login {
+            display: none;
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid #dee2e6;
+        }
+        
+        .admin-login.show {
+            display: block;
+        }
+        
+        .back-btn {
+            background: none;
+            border: none;
             color: #6c757d;
+            cursor: pointer;
+            font-size: 14px;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        .back-btn:hover {
+            color: #495057;
         }
         
         /* Indicador de conexión */
@@ -466,33 +535,47 @@
     </style>
 </head>
 <body>
-    <!-- Pantalla de Login -->
-    <div id="loginScreen">
-        <div class="excel-login">
-            <div class="excel-login-header">
-                <div style="font-size: 32px; margin-bottom: 10px;">📊</div>
+    <!-- Pantalla de Acceso -->
+    <div id="accessScreen">
+        <div class="access-screen">
+            <div class="access-header">
+                <div class="icon">📊</div>
                 <h2>Control de Precios</h2>
-                <p style="font-size: 14px; opacity: 0.9;">Productos del Profesor</p>
+                <p>Productos del Profesor</p>
             </div>
-            <div class="excel-login-body">
-                <div class="excel-form-group">
-                    <label>Usuario</label>
-                    <input type="text" id="username" placeholder="Ingresa tu usuario">
+            <div class="access-body">
+                <!-- Botón para empleados (acceso directo) -->
+                <button class="employee-btn" onclick="enterAsEmployee()">
+                    👤 Ingresar como Empleado
+                </button>
+                
+                <!-- Opción para administrador -->
+                <div class="admin-toggle">
+                    <button onclick="showAdminLogin()">🔐 Acceso de Administrador</button>
                 </div>
-                <div class="excel-form-group">
-                    <label>Contraseña</label>
-                    <input type="password" id="password" placeholder="Ingresa tu contraseña">
+                
+                <!-- Formulario de login para admin -->
+                <div id="adminLogin" class="admin-login">
+                    <button class="back-btn" onclick="hideAdminLogin()">
+                        ← Volver
+                    </button>
+                    <div class="excel-form-group">
+                        <label>Usuario</label>
+                        <input type="text" id="adminUsername" placeholder="admin">
+                    </div>
+                    <div class="excel-form-group">
+                        <label>Contraseña</label>
+                        <input type="password" id="adminPassword" placeholder="••••••">
+                    </div>
+                    <button onclick="adminLogin()" class="action-btn save" style="width: 100%; padding: 10px;">
+                        Ingresar como Administrador
+                    </button>
                 </div>
-                <button onclick="login()" class="action-btn save" style="width: 100%; padding: 10px;">Ingresar</button>
-            </div>
-            <div class="excel-login-footer">
-                <strong>Admin:</strong> admin / admin123<br>
-                <strong>Empleado:</strong> empleado / empleado123
             </div>
         </div>
     </div>
 
-    <!-- Pantalla Principal (después del login) -->
+    <!-- Pantalla Principal (después del acceso) -->
     <div id="mainScreen" style="display: none;">
         <!-- Header estilo Excel -->
         <div class="excel-header">
@@ -505,7 +588,7 @@
             </div>
         </div>
 
-        <!-- Barra de herramientas -->
+        <!-- Barra de herramientas (solo visible para admin) -->
         <div class="excel-toolbar" id="adminTools" style="display: none;">
             <button class="primary" onclick="openModal('addModal')">
                 <span>➕</span> Agregar Producto
@@ -518,7 +601,7 @@
             </div>
         </div>
 
-        <!-- Barra de búsqueda para empleados (visible cuando no hay adminTools) -->
+        <!-- Barra de búsqueda para empleados -->
         <div class="search-container" id="employeeSearch" style="display: none;">
             <div class="excel-search" style="max-width: 300px;">
                 <input type="text" id="employeeSearchInput" placeholder="Buscar producto..." onkeyup="filterProducts()">
@@ -624,7 +707,6 @@
         </div>
     </div>
 
-    <!-- Script de Firebase y lógica -->
     <script>
         // ============================================
         // CONFIGURACIÓN DE FIREBASE
@@ -671,7 +753,7 @@
                 }
             });
 
-            // Crear usuarios por defecto
+            // Crear usuarios por defecto (solo admin)
             await createDefaultUsers();
             
             // Escuchar cambios en productos
@@ -685,9 +767,12 @@
                 } else {
                     products = [];
                 }
-                updateDisplay();
-                document.getElementById('totalProducts').textContent = products.length;
-                document.getElementById('lastUpdate').textContent = new Date().toLocaleTimeString();
+                
+                if (currentUser) {
+                    updateDisplay();
+                    document.getElementById('totalProducts').textContent = products.length;
+                    document.getElementById('lastUpdate').textContent = new Date().toLocaleTimeString();
+                }
             });
 
             // Verificar sesión guardada
@@ -707,22 +792,34 @@
                     role: 'admin',
                     name: 'Administrador'
                 });
-                
-                await usersRef.child('empleado').set({
-                    username: 'empleado',
-                    password: btoa('empleado123'),
-                    role: 'employee',
-                    name: 'Empleado'
-                });
             }
         }
 
         // ============================================
-        // FUNCIONES DE AUTENTICACIÓN
+        // FUNCIONES DE ACCESO
         // ============================================
-        async function login() {
-            const username = document.getElementById('username').value;
-            const password = document.getElementById('password').value;
+        function enterAsEmployee() {
+            currentUser = {
+                username: 'empleado',
+                role: 'employee',
+                name: 'Empleado'
+            };
+            sessionStorage.setItem('currentUser', JSON.stringify(currentUser));
+            showMainScreen();
+            showMessage('Bienvenido, Empleado');
+        }
+
+        function showAdminLogin() {
+            document.getElementById('adminLogin').classList.add('show');
+        }
+
+        function hideAdminLogin() {
+            document.getElementById('adminLogin').classList.remove('show');
+        }
+
+        async function adminLogin() {
+            const username = document.getElementById('adminUsername').value || 'admin';
+            const password = document.getElementById('adminPassword').value;
             
             const snapshot = await usersRef.orderByChild('username').equalTo(username).once('value');
             const userData = snapshot.val();
@@ -742,11 +839,11 @@
                 }
             }
             
-            showMessage('Usuario o contraseña incorrectos', 'error');
+            showMessage('Contraseña incorrecta', 'error');
         }
 
         function showMainScreen() {
-            document.getElementById('loginScreen').style.display = 'none';
+            document.getElementById('accessScreen').style.display = 'none';
             document.getElementById('mainScreen').style.display = 'block';
             
             document.getElementById('userInfo').innerHTML = `
@@ -764,13 +861,21 @@
                 document.getElementById('adminActionsHeader').style.display = 'none';
                 document.getElementById('employeeSearch').style.display = 'block';
             }
+            
+            // Cargar productos
+            updateDisplay();
+            document.getElementById('totalProducts').textContent = products.length;
+            document.getElementById('lastUpdate').textContent = new Date().toLocaleTimeString();
         }
 
         function logout() {
             currentUser = null;
             sessionStorage.removeItem('currentUser');
-            document.getElementById('loginScreen').style.display = 'block';
+            document.getElementById('accessScreen').style.display = 'block';
             document.getElementById('mainScreen').style.display = 'none';
+            document.getElementById('adminLogin').classList.remove('show');
+            document.getElementById('adminUsername').value = '';
+            document.getElementById('adminPassword').value = '';
         }
 
         // ============================================
